@@ -2,6 +2,8 @@ package wappin
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/eko/gocache/cache"
 	"github.com/eko/gocache/marshaler"
 	"github.com/eko/gocache/store"
@@ -78,9 +80,19 @@ func generateAccessToken(clientId string) AccessToken {
 // Set access token in cache
 func setAccessToken(clientId string, accessToken AccessToken) {
 	key := keyTokenCache{ClientId: clientId}
-	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}})
+	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
+	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
 
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Get expired time in seconds format
+func expiredInSeconds(datetime string) time.Duration {
+	layout := "2006-01-02 15:04:05 -07"
+	expired, _ := time.Parse(layout, fmt.Sprintf("%s +07", datetime))
+	duration := expired.Sub(time.Now())
+
+	return time.Duration(int64(duration.Seconds()))
 }
