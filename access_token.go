@@ -94,5 +94,5 @@ func expiredInSeconds(datetime string) time.Duration {
 	expired, _ := time.Parse(layout, fmt.Sprintf("%s +07", datetime))
 	duration := expired.Sub(time.Now())
 
-	return time.Duration(int64(duration.Seconds()))
+	return time.Duration(int64(duration.Seconds())) * time.Second
 }
