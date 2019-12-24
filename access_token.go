@@ -1,6 +1,7 @@
 package wappin
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -31,6 +32,7 @@ type keyTokenCache struct {
 var accessToken AccessToken
 var cacheManager *cache.Cache
 var marshal *marshaler.Marshaler
+var client = resty.New()
 
 func init() {
 	initCacheManager()
@@ -62,23 +64,26 @@ func getAccessToken(clientId string) interface{} {
 
 // Generate access token by calling token API endpoint
 func generateAccessToken(clientId string) AccessToken {
-	client := resty.New()
 	url := baseUrl + TokenEndpoint
 	accessToken := AccessToken{}
-	_, err := client.R().SetHeader("Authorization", credentials.getBasicAuth(clientId)).SetResult(&accessToken).Post(url)
+	res, err := client.R().SetHeader("Authorization", credentials.getBasicAuth(clientId)).Post(url)
 
 	if err != nil {
 		panic(err)
 	}
 
+	if err := json.Unmarshal(res.Body(), &accessToken); err != nil {
+		panic(err)
+	}
+
 	// Set cache
-	setAccessToken(clientId, accessToken)
+	setAccessToken(clientId, &accessToken)
 
 	return accessToken
 }
 
 // Set access token in cache
-func setAccessToken(clientId string, accessToken AccessToken) {
+func setAccessToken(clientId string, accessToken *AccessToken) {
 	key := keyTokenCache{ClientId: clientId}
 	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
 	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
