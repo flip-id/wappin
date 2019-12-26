@@ -26,7 +26,7 @@ type AccessToken struct {
 }
 
 type keyTokenCache struct {
-	ClientId string
+	ClientSecret string
 }
 
 var accessToken AccessToken
@@ -49,24 +49,36 @@ func initCacheManager() {
 }
 
 // Get access token from cache or calling API
-func getAccessToken(clientId string) interface{} {
-	key := keyTokenCache{ClientId: clientId}
-	accessToken, err := marshal.Get(key, new(AccessToken))
+func getAccessToken(clientSecret string) AccessToken {
+	key := keyTokenCache{ClientSecret: clientSecret}
+	value, err := marshal.Get(key, new(AccessToken))
 
-	if accessToken == nil && err != nil {
-		accessToken = generateAccessToken(clientId)
+	if value == nil && err != nil {
+		accessToken = generateAccessToken(clientSecret)
 
 		return accessToken
+	}
+
+	jsonBlob, err := json.Marshal(value)
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(jsonBlob, &accessToken)
+
+	if err != nil {
+		panic(err)
 	}
 
 	return accessToken
 }
 
 // Generate access token by calling token API endpoint
-func generateAccessToken(clientId string) AccessToken {
+func generateAccessToken(clientSecret string) AccessToken {
 	url := baseUrl + TokenEndpoint
 	accessToken := AccessToken{}
-	res, err := client.R().SetHeader("Authorization", credentials.getBasicAuth(clientId)).Post(url)
+	res, err := client.R().SetHeader("Authorization", getBasicAuth(clientSecret)).Post(url)
 
 	if err != nil {
 		panic(err)
@@ -77,14 +89,14 @@ func generateAccessToken(clientId string) AccessToken {
 	}
 
 	// Set cache
-	setAccessToken(clientId, &accessToken)
+	setAccessToken(clientSecret, &accessToken)
 
 	return accessToken
 }
 
 // Set access token in cache
-func setAccessToken(clientId string, accessToken *AccessToken) {
-	key := keyTokenCache{ClientId: clientId}
+func setAccessToken(clientSecret string, accessToken *AccessToken) {
+	key := keyTokenCache{ClientSecret: clientSecret}
 	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
 	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
 
