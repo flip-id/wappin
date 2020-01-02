@@ -40,6 +40,21 @@ type ResMessage struct {
 	//Data string
 }
 
+// Callback data from Wappin
+type CallbackData struct {
+	CallbackType   string `json:"callback_type"`
+	ClientId       string `json:"client_id"`
+	ClientName     string `json:"client_name"`
+	Environment    string `json:"environment"`
+	MessageContent string `json:"message_content"`
+	MessageId      string `json:"message_id"`
+	ProjectId      string `json:"project_id"`
+	ProjectName    string `json:"project_name"`
+	SenderNumber   string `json:"sender_number"`
+	StatusMessages string `json:"status_messages"`
+	Timestamp      string `json:"timestamp"`
+}
+
 // Create sender object
 func New(config Config) *Sender {
 	return &Sender{Config:config}
