@@ -74,6 +74,24 @@ func TestFailSendNotificationHSM(t *testing.T) {
 	assert.Equal(t, "Not delivered, Contact validate Failed", res.Message)
 }
 
+func TestInvalidRequestFormat(t *testing.T) {
+	httpmock.ActivateNonDefault(client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	mockGetAccessToken()
+
+	config := Config{
+		ProjectId:    "0123",
+		ClientSecret: "cs-key",
+		ClientKey:    "ck-key",
+	}
+	sender := New(config)
+	var reqMsg  interface{}
+
+	_, err := sender.SendMessage(reqMsg)
+
+	assert.Equal(t, "invalid request message format", err.Error())
+}
+
 func mockGetAccessToken() {
 	fixture := `{ "status": "200", "message": "Success", "data": { "access_token": "677b800f9b694f98bb9db6edb18336743a3f416cadff1953a59190f309220936", "expired_datetime": "2020-12-28 10:20:23", "token_type": "Bearer" } }`
 	responder := httpmock.NewStringResponder(200, fixture)
