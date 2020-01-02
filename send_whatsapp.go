@@ -2,7 +2,7 @@ package wappin
 
 // Handler interface for sending Whatsapp message
 type WaHandler interface {
-	SendWaMessage(reqMessage ReqWaMessage) (ResMessage, error)
+	sendWaMessage(reqMessage ReqWaMessage) (ResMessage, error)
 }
 
 // Request body for Whatsapp message
@@ -13,4 +13,3 @@ type ReqWaMessage struct {
 	RecipientNumber string
 	Params          map[string]string
 }
-

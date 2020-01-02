@@ -8,13 +8,13 @@ import (
 const SendHsmEndpoint = "/v1/message/do-send-hsm"
 
 type Config struct {
-	ProjectId string
+	ProjectId    string
 	ClientSecret string
-	ClientKey string
+	ClientKey    string
 }
 
 type Sender struct {
-	Config Config
+	Config      Config
 	AccessToken AccessToken
 }
 
@@ -25,8 +25,8 @@ type Wappin interface {
 // Response body after post request to Wappin
 type ResMessage struct {
 	MessageId string `json:"message_id"`
-	Status string `json:"status"`
-	Message string `json:"message"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
 	//Data string
 }
 
@@ -47,7 +47,7 @@ type CallbackData struct {
 
 // Create sender object
 func New(config Config) *Sender {
-	return &Sender{Config:config}
+	return &Sender{Config: config}
 }
 
 // Set authorization token
@@ -66,7 +66,7 @@ func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
 
 	switch req := reqMsg.(type) {
 	case ReqWaMessage:
-		res, err = s.SendWaMessage(req)
+		res, err = s.sendWaMessage(req)
 	default:
 		return ResMessage{}, errors.New("invalid request message format")
 	}
@@ -75,7 +75,7 @@ func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
 }
 
 // Send Whatsapp message
-func (s *Sender) SendWaMessage(req ReqWaMessage) (ResMessage, error) {
+func (s *Sender) sendWaMessage(req ReqWaMessage) (ResMessage, error) {
 	res, err := s.postToWappin(SendHsmEndpoint, req)
 
 	return res, err
