@@ -1,6 +1,7 @@
 package wappin
 
 import (
+	"errors"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -15,7 +16,22 @@ func TestGetAccessToken(t *testing.T) {
 		fakeUrl := baseUrl + TokenEndpoint
 		httpmock.RegisterResponder("POST", fakeUrl, responder)
 
-		accessToken := getAccessToken("secret-key")
+		accessToken, _ := getAccessToken("secret-key")
 
 		assert.Equal(t, "677b800f9b694f98bb9db6edb18336743a3f416cadff1953a59190f309220936", accessToken.Data.AccessToken)
+}
+
+func TestFailGetAccessToken(t *testing.T) {
+	httpmock.ActivateNonDefault(client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	fixture := `{ "status": "401", "message": "Invalid credential", "data": null }`
+	responder := httpmock.NewStringResponder(200, fixture)
+	fakeUrl := baseUrl + TokenEndpoint
+	httpmock.RegisterResponder("POST", fakeUrl, responder)
+
+	_, err := getAccessToken("invalid-secret-key")
+
+	expectedErr := errors.New("Invalid credential")
+	assert.Equal(t, expectedErr, err)
 }

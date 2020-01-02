@@ -2,6 +2,7 @@ package wappin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -49,60 +50,62 @@ func initCacheManager() {
 }
 
 // Get access token from cache or calling API
-func getAccessToken(clientSecret string) AccessToken {
+func getAccessToken(clientSecret string) (AccessToken, error) {
 	key := keyTokenCache{ClientSecret: clientSecret}
 	value, err := marshal.Get(key, new(AccessToken))
 
 	if value == nil && err != nil {
-		accessToken = generateAccessToken(clientSecret)
+		accessToken, err = generateAccessToken(clientSecret)
 
-		return accessToken
+		return accessToken, err
 	}
 
 	jsonBlob, err := json.Marshal(value)
 
 	if err != nil {
-		panic(err)
+		return accessToken, err
 	}
 
 	err = json.Unmarshal(jsonBlob, &accessToken)
 
 	if err != nil {
-		panic(err)
+		return accessToken, err
 	}
 
-	return accessToken
+	return accessToken, err
 }
 
 // Generate access token by calling token API endpoint
-func generateAccessToken(clientSecret string) AccessToken {
+func generateAccessToken(clientSecret string) (AccessToken, error) {
 	url := baseUrl + TokenEndpoint
 	accessToken := AccessToken{}
 	res, err := client.R().SetHeader("Authorization", getBasicAuth(clientSecret)).Post(url)
 
 	if err != nil {
-		panic(err)
+		return accessToken, err
 	}
 
 	if err := json.Unmarshal(res.Body(), &accessToken); err != nil {
-		panic(err)
+		return accessToken, err
+	}
+
+	if accessToken.Status == "401" {
+		return accessToken, errors.New(accessToken.Message)
 	}
 
 	// Set cache
-	setAccessToken(clientSecret, &accessToken)
+	err = setAccessToken(clientSecret, &accessToken)
 
-	return accessToken
+	return accessToken, err
 }
 
 // Set access token in cache
-func setAccessToken(clientSecret string, accessToken *AccessToken) {
+func setAccessToken(clientSecret string, accessToken *AccessToken) error {
 	key := keyTokenCache{ClientSecret: clientSecret}
 	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
 	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
 
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 // Get expired time in seconds format
