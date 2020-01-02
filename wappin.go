@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-const SendHsmEndpoint  = "/v1/message/do-send-hsm"
+const SendHsmEndpoint = "/v1/message/do-send-hsm"
 
 type Config struct {
 	ProjectId string
@@ -13,26 +13,16 @@ type Config struct {
 	ClientKey string
 }
 
-// Handler interface for sending Whatsapp message
-type WaHandler interface {
-	SendWaMessage(reqMessage ReqWaMessage) (ResMessage, error)
-}
-
 type Sender struct {
 	Config Config
 	AccessToken AccessToken
 }
 
-// Request body for Whatsapp message
-type ReqWaMessage struct {
-	ClientId string
-	ProjectId string
-	Type string
-	RecipientNumber string
-	Params map[string]string
+type Wappin interface {
+	postToWappin(endpoint string, payload interface{}) (ResMessage, error)
 }
 
-// Response body after sending message to Wappin
+// Response body after post request to Wappin
 type ResMessage struct {
 	MessageId string `json:"message_id"`
 	Status string `json:"status"`
@@ -86,8 +76,15 @@ func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
 
 // Send Whatsapp message
 func (s *Sender) SendWaMessage(req ReqWaMessage) (ResMessage, error) {
-	url := baseUrl + SendHsmEndpoint
-	res, err := client.R().SetBody(req).SetHeader("Authorization", s.AccessToken.Data.AccessToken).Post(url)
+	res, err := s.postToWappin(SendHsmEndpoint, req)
+
+	return res, err
+}
+
+// Post request to Wappin service
+func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, error) {
+	url := baseUrl + endpoint
+	res, err := client.R().SetBody(body).SetHeader("Authorization", s.AccessToken.Data.AccessToken).Post(url)
 	resMessage := ResMessage{}
 
 	if err := json.Unmarshal(res.Body(), &resMessage); err != nil {
