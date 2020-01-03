@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/eko/gocache/cache"
@@ -33,7 +35,10 @@ type keyTokenCache struct {
 var accessToken AccessToken
 var cacheManager *cache.Cache
 var marshal *marshaler.Marshaler
-var client = resty.New()
+var (
+	timeout, _ = strconv.Atoi(os.Getenv("WAPPIN_TIMEOUT"))
+	client = resty.New().SetTimeout(time.Second * time.Duration(timeout))
+)
 
 func init() {
 	initCacheManager()
