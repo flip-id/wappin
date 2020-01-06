@@ -37,7 +37,7 @@ var cacheManager *cache.Cache
 var marshal *marshaler.Marshaler
 var (
 	timeout, _ = strconv.Atoi(os.Getenv("WAPPIN_TIMEOUT"))
-	client = resty.New().SetTimeout(time.Second * time.Duration(timeout))
+	client     = resty.New().SetTimeout(time.Second * time.Duration(timeout))
 )
 
 func init() {
@@ -84,7 +84,7 @@ func getAccessToken(clientSecret string) (AccessToken, error) {
 func generateAccessToken(clientSecret string) (AccessToken, error) {
 	url := baseUrl + TokenEndpoint
 	accessToken := AccessToken{}
-	res, err := client.R().SetHeader("Authorization", getBasicAuth(clientSecret)).Post(url)
+	res, err := client.R().SetBasicAuth(clientId, clientSecret).Post(url)
 
 	if err != nil {
 		return accessToken, err
