@@ -8,9 +8,9 @@ import (
 const SendHsmEndpoint = "/v1/message/do-send-hsm"
 
 type Config struct {
-	ProjectId    string
-	ClientSecret string
-	ClientKey    string
+	ProjectId string
+	SecretKey string
+	ClientKey string
 }
 
 type Sender struct {
@@ -52,7 +52,7 @@ func New(config Config) *Sender {
 
 // Set authorization token
 func (s *Sender) setToken() {
-	accessToken, err := getAccessToken(s.Config.ClientSecret)
+	accessToken, err := getAccessToken(s.Config.SecretKey)
 
 	if err != nil {
 		panic(err)

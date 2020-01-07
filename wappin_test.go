@@ -17,9 +17,9 @@ func TestSendNotificationHSM(t *testing.T) {
 	httpmock.RegisterResponder("POST", fakeUrl, responder)
 
 	config := Config{
-		ProjectId:    "0123",
-		ClientSecret: "cs-key",
-		ClientKey:    "ck-key",
+		ProjectId: "0123",
+		SecretKey: "cs-key",
+		ClientKey: "ck-key",
 	}
 	sender := New(config)
 	reqMsg := ReqWaMessage{
@@ -51,9 +51,9 @@ func TestFailSendNotificationHSM(t *testing.T) {
 	httpmock.RegisterResponder("POST", fakeUrl, responder)
 
 	config := Config{
-		ProjectId:    "0123",
-		ClientSecret: "cs-key",
-		ClientKey:    "ck-key",
+		ProjectId: "0123",
+		SecretKey: "cs-key",
+		ClientKey: "ck-key",
 	}
 	sender := New(config)
 	reqMsg := ReqWaMessage{
@@ -80,9 +80,9 @@ func TestInvalidRequestFormat(t *testing.T) {
 	mockGetAccessToken()
 
 	config := Config{
-		ProjectId:    "0123",
-		ClientSecret: "cs-key",
-		ClientKey:    "ck-key",
+		ProjectId: "0123",
+		SecretKey: "cs-key",
+		ClientKey: "ck-key",
 	}
 	sender := New(config)
 	var reqMsg  interface{}
