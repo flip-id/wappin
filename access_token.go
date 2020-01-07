@@ -29,7 +29,7 @@ type AccessToken struct {
 }
 
 type keyTokenCache struct {
-	ClientSecret string
+	SecretKey string
 }
 
 var accessToken AccessToken
@@ -73,12 +73,15 @@ func SetClient(c *resty.Client) {
 }
 
 // Get access token from cache or calling API
-func getAccessToken(clientSecret string) (AccessToken, error) {
-	key := keyTokenCache{ClientSecret: clientSecret}
+func getAccessToken(secretKey string) (AccessToken, error) {
+	key := keyTokenCache{SecretKey: secretKey}
 	value, err := marshal.Get(key, new(AccessToken))
+	accessToken, err = generateAccessToken(secretKey)
+
+	return accessToken, err
 
 	if value == nil && err != nil {
-		accessToken, err = generateAccessToken(clientSecret)
+		accessToken, err = generateAccessToken(secretKey)
 
 		return accessToken, err
 	}
@@ -99,10 +102,10 @@ func getAccessToken(clientSecret string) (AccessToken, error) {
 }
 
 // Generate access token by calling token API endpoint
-func generateAccessToken(clientSecret string) (AccessToken, error) {
+func generateAccessToken(secretKey string) (AccessToken, error) {
 	url := baseUrl + TokenEndpoint
 	accessToken := AccessToken{}
-	res, err := client.R().SetBasicAuth(clientId, clientSecret).Post(url)
+	res, err := client.R().SetBasicAuth(clientId, secretKey).Post(url)
 
 	if err != nil {
 		return accessToken, err
@@ -117,14 +120,14 @@ func generateAccessToken(clientSecret string) (AccessToken, error) {
 	}
 
 	// Set cache
-	err = setAccessToken(clientSecret, &accessToken)
+	err = setAccessToken(secretKey, &accessToken)
 
 	return accessToken, err
 }
 
 // Set access token in cache
 func setAccessToken(clientSecret string, accessToken *AccessToken) error {
-	key := keyTokenCache{ClientSecret: clientSecret}
+	key := keyTokenCache{SecretKey: clientSecret}
 	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
 	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
 
