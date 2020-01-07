@@ -84,7 +84,7 @@ func (s *Sender) sendWaMessage(req ReqWaMessage) (ResMessage, error) {
 // Post request to Wappin service
 func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, error) {
 	url := baseUrl + endpoint
-	res, err := client.R().SetBody(body).SetHeader("Authorization", s.AccessToken.Data.AccessToken).Post(url)
+	res, err := client.R().SetBody(body).SetAuthToken(s.AccessToken.Data.AccessToken).Post(url)
 	resMessage := ResMessage{}
 
 	if err := json.Unmarshal(res.Body(), &resMessage); err != nil {
