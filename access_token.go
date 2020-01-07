@@ -54,6 +54,11 @@ func initCacheManager() {
 	marshal = marshaler.New(cacheManager)
 }
 
+// Set custom client. This is useful for testing
+func SetClient(c *resty.Client) {
+	client = c
+}
+
 // Get access token from cache or calling API
 func getAccessToken(clientSecret string) (AccessToken, error) {
 	key := keyTokenCache{ClientSecret: clientSecret}
