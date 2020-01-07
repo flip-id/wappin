@@ -15,6 +15,7 @@ func init() {
 	}
 }
 func TestGetAccessToken(t *testing.T) {
+		cacheManager.Clear()
 		httpmock.ActivateNonDefault(client.GetClient())
 		defer httpmock.DeactivateAndReset()
 
@@ -29,6 +30,7 @@ func TestGetAccessToken(t *testing.T) {
 }
 
 func TestFailGetAccessToken(t *testing.T) {
+	cacheManager.Clear()
 	httpmock.ActivateNonDefault(client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
