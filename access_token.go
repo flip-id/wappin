@@ -39,9 +39,22 @@ var (
 	timeout, _ = strconv.Atoi(os.Getenv("WAPPIN_TIMEOUT"))
 	client     = resty.New().SetTimeout(time.Second * time.Duration(timeout))
 )
+var (
+	cacheDriver string
+	cacheHost string
+	cachePort string
+)
 
 func init() {
+	loadEnv()
+	prepareVars()
 	initCacheManager()
+}
+
+func prepareVars() {
+	cacheDriver = os.Getenv("WAPPIN_CACHE_DRIVER")
+	cacheHost = os.Getenv("WAPPIN_CACHE_HOST")
+	cachePort = os.Getenv("WAPPIN_CACHE_PORT")
 }
 
 func initCacheManager() {

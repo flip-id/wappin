@@ -1,16 +1,27 @@
 package wappin
 
 import (
+	"github.com/joho/godotenv"
 	"os"
-
-	_ "github.com/joho/godotenv/autoload"
 )
 
 var (
-	baseUrl = os.Getenv("WAPPIN_BASE_URL")
-	clientId = os.Getenv("WAPPIN_CLIENT_ID")
-	cacheDriver = os.Getenv("WAPPIN_CACHE_DRIVER")
-	cacheHost   = os.Getenv("WAPPIN_CACHE_HOST")
-	cachePort   = os.Getenv("WAPPIN_CACHE_PORT")
+	baseUrl string
+	clientId string
 )
 
+func init() {
+	loadEnv()
+
+	baseUrl = os.Getenv("WAPPIN_BASE_URL")
+	clientId = os.Getenv("WAPPIN_CLIENT_ID")
+}
+
+
+func loadEnv() {
+	err := godotenv.Load()
+
+	if err != nil {
+		godotenv.Load("./../../.env")
+	}
+}

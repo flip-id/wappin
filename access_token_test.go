@@ -3,10 +3,17 @@ package wappin
 import (
 	"errors"
 	"github.com/jarcoal/httpmock"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+func init() {
+	err := godotenv.Load()
 
+	if err != nil {
+		godotenv.Load("./../../.env")
+	}
+}
 func TestGetAccessToken(t *testing.T) {
 		httpmock.ActivateNonDefault(client.GetClient())
 		defer httpmock.DeactivateAndReset()
