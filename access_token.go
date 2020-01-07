@@ -115,6 +115,10 @@ func setAccessToken(clientSecret string, accessToken *AccessToken) error {
 	seconds := expiredInSeconds(accessToken.Data.ExpiredDatetime)
 	err := marshal.Set(key, accessToken, &store.Options{Tags: []string{"access_token"}, Expiration: seconds})
 
+	if err != nil {
+		return errors.New("can't connect to cache driver")
+	}
+
 	return err
 }
 
