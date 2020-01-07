@@ -64,7 +64,15 @@ func (s *Sender) setToken() error {
 }
 
 func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
-	s.setToken()
+	err = s.setToken()
+
+	if err != nil {
+		return ResMessage{
+			MessageId: "",
+			Status:    "400",
+			Message:   err.Error(),
+		}, err
+	}
 
 	switch req := reqMsg.(type) {
 	case ReqWaMessage:
