@@ -76,9 +76,6 @@ func SetClient(c *resty.Client) {
 func getAccessToken(secretKey string) (AccessToken, error) {
 	key := keyTokenCache{SecretKey: secretKey}
 	value, err := marshal.Get(key, new(AccessToken))
-	accessToken, err = generateAccessToken(secretKey)
-
-	return accessToken, err
 
 	if value == nil && err != nil {
 		accessToken, err = generateAccessToken(secretKey)
