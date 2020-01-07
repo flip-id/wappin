@@ -51,14 +51,16 @@ func New(config Config) *Sender {
 }
 
 // Set authorization token
-func (s *Sender) setToken() {
+func (s *Sender) setToken() error {
 	accessToken, err := getAccessToken(s.Config.SecretKey)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	s.AccessToken = accessToken
+
+	return nil
 }
 
 func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
