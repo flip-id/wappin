@@ -13,6 +13,7 @@ import (
 	"github.com/eko/gocache/store"
 	"github.com/go-redis/redis/v7"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 const TokenEndpoint = "/v1/token/get"
@@ -113,6 +114,10 @@ func generateAccessToken(secretKey string) (AccessToken, error) {
 	}
 
 	if accessToken.Status != "200" {
+		log.WithFields(log.Fields{
+			"msg": "Failed to get token",
+			"res": res,
+		}).Error()
 		return accessToken, errors.New(accessToken.Message)
 	}
 
