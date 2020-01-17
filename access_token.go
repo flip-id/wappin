@@ -112,7 +112,7 @@ func generateAccessToken(secretKey string) (AccessToken, error) {
 		return accessToken, err
 	}
 
-	if accessToken.Status == "401" {
+	if accessToken.Status != "200" {
 		return accessToken, errors.New(accessToken.Message)
 	}
 
