@@ -26,10 +26,11 @@ type Wappin interface {
 
 // Response body after post request to Wappin
 type ResMessage struct {
-	MessageId string `json:"message_id"`
-	Status    string `json:"status"`
-	Message   string `json:"message"`
-	//Data string
+	MessageId      string `json:"message_id"`
+	Status         string `json:"status"`
+	Message        string `json:"message"`
+	HttpStatusCode int
+	RawData        string
 }
 
 // Callback data from Wappin
@@ -99,13 +100,18 @@ func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, er
 	res, err := client.R().SetBody(body).SetAuthToken(s.AccessToken.Data.AccessToken).Post(url)
 	resMessage := ResMessage{}
 
+	if res != nil {
+		resMessage.HttpStatusCode = res.StatusCode()
+		resMessage.RawData = string(res.Body())
+	}
+
 	if err != nil {
 		log.Error(err)
 		return resMessage, err
 	}
 
 	if res.StatusCode() != 200 {
-	    log.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"msg": "Status code is not we expected",
 			"res": res,
 		}).Warn()
@@ -117,4 +123,3 @@ func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, er
 
 	return resMessage, err
 }
-
