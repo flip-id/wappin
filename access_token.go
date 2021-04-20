@@ -41,9 +41,11 @@ var (
 	client     = resty.New().SetTimeout(time.Second * time.Duration(timeout))
 )
 var (
-	cacheDriver string
-	cacheHost string
-	cachePort string
+	cacheDriver   string
+	cacheHost     string
+	cachePort     string
+	cacheUser     string
+	cachePassword string
 )
 
 func init() {
@@ -56,13 +58,20 @@ func prepareVars() {
 	cacheDriver = os.Getenv("WAPPIN_CACHE_DRIVER")
 	cacheHost = os.Getenv("WAPPIN_CACHE_HOST")
 	cachePort = os.Getenv("WAPPIN_CACHE_PORT")
+	cacheUser = os.Getenv("WAPPIN_CACHE_USER")
+	cachePassword = os.Getenv("WAPPIN_CACHE_PASSWORD")
 }
 
 func initCacheManager() {
 	// TODO: Add dynamic options for driver
-	store := store.NewRedis(redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%s", cacheHost, cachePort),
-	}), nil)
+	connUrl := fmt.Sprintf("redis://%s:%s@%s:%s/0", cacheUser, cachePassword, cacheHost, cachePort)
+	opt, err := redis.ParseURL(connUrl)
+
+	if err != nil {
+		panic(err)
+	}
+
+	store := store.NewRedis(redis.NewClient(opt), nil)
 
 	cacheManager = cache.New(store)
 	marshal = marshaler.New(cacheManager)
