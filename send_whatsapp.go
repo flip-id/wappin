@@ -12,4 +12,5 @@ type ReqWaMessage struct {
 	Type            string            `json:"type"`
 	RecipientNumber string            `json:"recipient_number"`
 	Params          map[string]string `json:"params"`
+	Token string 
 }

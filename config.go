@@ -2,7 +2,6 @@ package wappin
 
 import (
 	"github.com/joho/godotenv"
-	"os"
 )
 
 var (
@@ -13,10 +12,12 @@ var (
 func init() {
 	loadEnv()
 
-	baseUrl = os.Getenv("WAPPIN_BASE_URL")
-	clientId = os.Getenv("WAPPIN_CLIENT_ID")
 }
 
+func NewConfig(bURL string, clID string){
+	baseUrl = bURL
+	clientId = clID
+}
 
 func loadEnv() {
 	err := godotenv.Load()
