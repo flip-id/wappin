@@ -25,7 +25,7 @@ type Config struct {
 
 type Sender struct {
 	Config      Config
-	AccessToken AccessToken
+	AccessToken *AccessToken
 }
 
 type Wappin interface {
@@ -132,7 +132,7 @@ func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, er
 func (s *Sender) GenerateAccessToken() (AccessToken, error) {
 	url := s.Config.BaseUrl + TOKEN_ENDPOINT
 	accessToken := AccessToken{}
-	res, err := client.R().SetBasicAuth(clientId, s.Config.SecretKey).Post(url)
+	res, err := client.R().SetBasicAuth(s.Config.ClientId, s.Config.SecretKey).Post(url)
 
 	if err != nil {
 		return accessToken, err
