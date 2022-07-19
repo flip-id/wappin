@@ -1,157 +1,133 @@
 package wappin
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
-	"time"
+	"io"
+	"net/http"
 
-	"github.com/go-resty/resty/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/fairyhunter13/pool"
+	"github.com/flip-id/valuefirst/manager"
+	"github.com/gofiber/fiber/v2"
 )
 
-const SEND_HSM_ENDPOINT = "/v1/message/do-send-hsm"
-const TOKEN_ENDPOINT = "/v1/token/get"
-const CONNECTION_TIME_OUT = 15
+var _ manager.TokenClient = new(client)
 
-var client = resty.New().SetTimeout(time.Second * time.Duration(CONNECTION_TIME_OUT))
-
-type Config struct {
-	BaseUrl   string
-	ClientId  string
-	ProjectId string
-	SecretKey string
-	ClientKey string
+type Client interface {
+	// Implement all TokenClient interface from the valuefirst package.
+	manager.TokenClient
+	SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage) (res *ResponseMessage, err error)
+	// 	TODO: Add method in here.
 }
 
-type Sender struct {
-	Config      Config
-	AccessToken *AccessToken
+type client struct {
+	opt *Option
 }
 
-type Wappin interface {
-	postToWappin(endpoint string, payload interface{}) (ResMessage, error)
+// New initialize a new client for Wappin.
+func New(opts ...FnOption) (c Client) {
+	o := (new(Option)).Assign(opts...).Default()
+
+	c = &client{o.Clone()}
+	return
 }
 
-// Response body after post request to Wappin
-type ResMessage struct {
-	MessageId      string `json:"message_id"`
-	Status         string `json:"status"`
-	Message        string `json:"message"`
-	HttpStatusCode int
-	RawData        string
+func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage) (res *ResponseMessage, err error) {
+	if reqMsg == nil {
+		err = ErrNilArguments
+		return
+	}
+
+	res, err = c.postToWappin(ctx, EndpointSendHSM, reqMsg)
+	return
 }
 
-// Callback data from Wappin
-type CallbackData struct {
-	CallbackType   string `json:"callback_type"`
-	ClientId       string `json:"client_id"`
-	ClientName     string `json:"client_name"`
-	Environment    string `json:"environment"`
-	MessageContent string `json:"message_content"`
-	MessageId      string `json:"message_id"`
-	ProjectId      string `json:"project_id"`
-	ProjectName    string `json:"project_name"`
-	SenderNumber   string `json:"sender_number"`
-	StatusMessages string `json:"status_messages"`
-	Timestamp      string `json:"timestamp"`
-}
+func (c *client) postToWappin(ctx context.Context, endpoint string, body interface{}) (res *ResponseMessage, err error) {
+	buff := pool.GetBuffer()
+	defer pool.Put(buff)
 
-type AccessToken struct {
-	ClientId string
-	Status   string `json:"status"`
-	Message  string `json:"message"`
-	Data     struct {
-		AccessToken     string `json:"access_token"`
-		ExpiredDatetime string `json:"expired_datetime"`
-		TokenType       string `json:"token_type"`
-	} `json:"data"`
-}
-
-// Create sender object
-func New(config Config) *Sender {
-	return &Sender{Config: config}
-}
-
-func (s *Sender) SendMessage(reqMsg interface{}) (res ResMessage, err error) {
-
+	err = json.NewEncoder(buff).Encode(body)
 	if err != nil {
-		return ResMessage{
-			MessageId: "",
-			Status:    "400",
-			Message:   err.Error(),
-		}, err
+		return
 	}
 
-	switch req := reqMsg.(type) {
-	case ReqWaMessage:
-		res, err = s.sendWaMessage(req)
-	default:
-		return ResMessage{}, errors.New("invalid request message format")
-	}
-
-	return res, err
-}
-
-// Send Whatsapp message
-func (s *Sender) sendWaMessage(req ReqWaMessage) (ResMessage, error) {
-	res, err := s.postToWappin(SEND_HSM_ENDPOINT, req)
-
-	return res, err
-}
-
-// Post request to Wappin service
-func (s *Sender) postToWappin(endpoint string, body interface{}) (ResMessage, error) {
-	url := s.Config.BaseUrl + endpoint
-	res, err := client.R().SetBody(body).SetAuthToken(s.AccessToken.Data.AccessToken).Post(url)
-	resMessage := ResMessage{}
-
-	if res != nil {
-		resMessage.HttpStatusCode = res.StatusCode()
-		resMessage.RawData = string(res.Body())
-	}
-
+	url := c.opt.BaseURL + endpoint
+	req, err := http.NewRequest(http.MethodPost, url, buff)
 	if err != nil {
-		log.Error(err)
-		return resMessage, err
+		return
 	}
 
-	if res.StatusCode() != 200 {
-		log.WithFields(log.Fields{
-			"msg": "Status code is not we expected",
-			"res": res,
-		}).Warn()
+	// TODO: Add get token here.
+	// req.Header.Set(fiber.HeaderAuthorization, TokenBearer+c.opt.)
+	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	req = req.WithContext(ctx)
+	resp, err := c.opt.client.Do(req)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	res.HttpStatusCode = resp.StatusCode
+	byteBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
 	}
 
-	if err := json.Unmarshal(res.Body(), &resMessage); err != nil {
-		return resMessage, err
+	res.RawData = convertByteToString(byteBody)
+	err = getError(res.HttpStatusCode, res.Status, res.Message)
+	if err != nil {
+		return
 	}
 
-	return resMessage, nil
+	err = json.Unmarshal(byteBody, &res)
+	return
 }
 
-func (s *Sender) GenerateAccessToken() (AccessToken, error) {
-	url := s.Config.BaseUrl + TOKEN_ENDPOINT
-	accessToken := AccessToken{}
-	res, err := client.R().SetBasicAuth(s.Config.ClientId, s.Config.SecretKey).Post(url)
-
+// GenerateToken generates a token for Wappin.
+func (c *client) GenerateToken(ctx context.Context) (res manager.ResponseGenerateToken, err error) {
+	url := c.opt.BaseURL + EndpointToken
+	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		return accessToken, err
+		return
 	}
 
-	if err := json.Unmarshal(res.Body(), &accessToken); err != nil {
-		return accessToken, err
+	req = req.WithContext(ctx)
+	req.SetBasicAuth(c.opt.ClientID, c.opt.SecretKey)
+	resp, err := c.opt.client.Do(req)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	var accessToken AccessToken
+	err = json.NewDecoder(resp.Body).Decode(&accessToken)
+	if err != nil {
+		return
 	}
 
-	if accessToken.Status != "200" {
-		log.WithFields(log.Fields{
-			"msg": "Failed to get token",
-			"res": res,
-		}).Error()
-		return accessToken, errors.New(accessToken.Message)
-	}
+	res, err = accessToken.ToResponseGenerateToken(resp.StatusCode)
+	return
+}
 
-	// Set cache
-	//err = setAccessToken(s.Config.SecretKey, &accessToken)
+// EnableToken enables a token for Wappin.
+func (c *client) EnableToken(ctx context.Context, token string) (res manager.ResponseEnableToken, err error) {
+	return
+}
 
-	return accessToken, err
+// DisableToken disables a token for Wappin.
+func (c *client) DisableToken(ctx context.Context, token string) (res manager.ResponseEnableToken, err error) {
+	return
+}
+
+// DeleteToken deletes the token.
+func (c *client) DeleteToken(ctx context.Context, token string) (res manager.ResponseEnableToken, err error) {
+	return
 }
