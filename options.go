@@ -33,7 +33,6 @@ type Option struct {
 	ProjectID      string
 	SecretKey      string
 	ClientKey      string
-	CustomIPs      []string
 	Client         heimdall.Doer
 	Timeout        time.Duration
 	HystrixOptions []hystrix.Option
@@ -176,12 +175,5 @@ func WithStorage(storage storage.Hub) FnOption {
 func WithManagerOptions(options ...manager.FnOption) FnOption {
 	return func(o *Option) {
 		o.ManagerOptions = options
-	}
-}
-
-// WithCustomIPs sets the custom IPs of Wappin API.
-func WithCustomIPs(customIPs ...string) FnOption {
-	return func(o *Option) {
-		o.CustomIPs = customIPs
 	}
 }

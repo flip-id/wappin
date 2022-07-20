@@ -53,9 +53,6 @@ func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage
 }
 
 func (c *client) prepareRequest(ctx context.Context, req *http.Request) *http.Request {
-	for _, ip := range c.opt.CustomIPs {
-		req.Header.Add(fiber.HeaderXForwardedFor, ip)
-	}
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	return req.WithContext(ctx)
 }

@@ -34,7 +34,6 @@ func setupClient() {
 			WithProjectID(os.Getenv("WAPPIN_PROJECT_ID")),
 			WithSecretKey(os.Getenv("WAPPIN_SECRET_KEY")),
 			WithClientKey(os.Getenv("WAPPIN_CLIENT_KEY")),
-			WithCustomIPs(os.Getenv("WAPPIN_IP")),
 		)
 	})
 }
@@ -54,12 +53,12 @@ func TestSendOTPWAMessage(t *testing.T) {
 		Type:            "otp_code_new",
 		RecipientNumber: os.Getenv("PHONE_NUMBER"),
 		Params: map[string]string{
-			"1": "113900",
+			"1": "202404",
 		},
 	})
 
 	assert.Nil(t, err)
-	assert.NotNil(t, err)
+	assert.NotNil(t, resp)
 	assert.Equal(t, "200", resp.Status)
 	assert.Equal(t, "Success", resp.Message)
 	assert.Equal(t, http.StatusOK, resp.HttpStatusCode)
