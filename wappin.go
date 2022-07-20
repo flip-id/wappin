@@ -14,10 +14,9 @@ import (
 var _ manager.TokenClient = new(client)
 
 type Client interface {
-	// Implement all TokenClient interface from the valuefirst package.
+	// TokenClient implements all TokenClient interface from the valuefirst package.
 	manager.TokenClient
 	SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage) (res *ResponseMessage, err error)
-	// 	TODO: Add method in here.
 }
 
 type client struct {
@@ -26,10 +25,21 @@ type client struct {
 
 // New initialize a new client for Wappin.
 func New(opts ...FnOption) (c Client) {
-	o := (new(Option)).Assign(opts...).Default()
-
-	c = &client{o.Clone()}
+	cl := new(client)
+	o := (new(Option)).Assign(opts...).
+		setWappinClient(cl).
+		Default()
+	c = cl.Assign(o)
 	return
+}
+
+func (c *client) Assign(o *Option) *client {
+	if o == nil {
+		return c
+	}
+
+	c.opt = o.Clone()
+	return c
 }
 
 func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage) (res *ResponseMessage, err error) {
@@ -38,8 +48,16 @@ func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage
 		return
 	}
 
-	res, err = c.postToWappin(ctx, EndpointSendHSM, reqMsg)
+	res, err = c.postToWappin(ctx, EndpointSendHSM, reqMsg.Default(c.opt))
 	return
+}
+
+func (c *client) prepareRequest(ctx context.Context, req *http.Request) *http.Request {
+	for _, ip := range c.opt.CustomIPs {
+		req.Header.Add(fiber.HeaderXForwardedFor, ip)
+	}
+	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	return req.WithContext(ctx)
 }
 
 func (c *client) postToWappin(ctx context.Context, endpoint string, body interface{}) (res *ResponseMessage, err error) {
@@ -57,11 +75,13 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 		return
 	}
 
-	// TODO: Add get token here.
-	// req.Header.Set(fiber.HeaderAuthorization, TokenBearer+c.opt.)
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	req = req.WithContext(ctx)
-	resp, err := c.opt.client.Do(req)
+	token, err := c.opt.manager.Get(ctx)
+	if err != nil {
+		return
+	}
+
+	req.Header.Set(fiber.HeaderAuthorization, TokenBearer+token)
+	resp, err := c.opt.client.Do(c.prepareRequest(ctx, req))
 	if err != nil {
 		return
 	}
@@ -71,19 +91,19 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 		}
 	}()
 
-	res.HttpStatusCode = resp.StatusCode
 	byteBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 
-	res.RawData = convertByteToString(byteBody)
-	err = getError(res.HttpStatusCode, res.Status, res.Message)
+	err = json.Unmarshal(byteBody, &res)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(byteBody, &res)
+	res.HttpStatusCode = resp.StatusCode
+	res.RawData = convertByteToString(byteBody)
+	err = getError(res.HttpStatusCode, res.Status, res.Message)
 	return
 }
 
@@ -95,9 +115,8 @@ func (c *client) GenerateToken(ctx context.Context) (res manager.ResponseGenerat
 		return
 	}
 
-	req = req.WithContext(ctx)
 	req.SetBasicAuth(c.opt.ClientID, c.opt.SecretKey)
-	resp, err := c.opt.client.Do(req)
+	resp, err := c.opt.client.Do(c.prepareRequest(ctx, req))
 	if err != nil {
 		return
 	}

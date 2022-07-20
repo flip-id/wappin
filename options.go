@@ -2,6 +2,8 @@ package wappin
 
 import (
 	"github.com/fairyhunter13/reflecthelper/v5"
+	"github.com/flip-id/valuefirst/manager"
+	"github.com/flip-id/valuefirst/storage"
 	"github.com/gojek/heimdall/v7"
 	"github.com/gojek/heimdall/v7/hystrix"
 	"net/http"
@@ -14,6 +16,8 @@ const (
 	DefaultBaseURL = "https://api.wappin.id"
 	// DefaultTimeout is the default timeout of Wappin API.
 	DefaultTimeout = 30 * time.Second
+	// 	DefaultTokenKey is the default key for the token storage.
+	DefaultTokenKey = "manager:token:wappin"
 )
 
 // List of all endpoints used in this package.
@@ -29,12 +33,15 @@ type Option struct {
 	ProjectID      string
 	SecretKey      string
 	ClientKey      string
+	CustomIPs      []string
 	Client         heimdall.Doer
 	Timeout        time.Duration
 	HystrixOptions []hystrix.Option
-	// TODO: Add valuefirst storage hub here.
-	// TODO: Add valuefirst token manager options here.
-	client *hystrix.Client
+	Storage        storage.Hub
+	ManagerOptions []manager.FnOption
+	client         *hystrix.Client
+	wappinClient   *client
+	manager        manager.TokenManager
 }
 
 // Assign assigns the option to the client.
@@ -47,9 +54,15 @@ func (o *Option) Assign(opts ...FnOption) *Option {
 }
 
 // Clone returns a clone of the option.
+// Clone only returns a shallow copy of the option.
 func (o *Option) Clone() *Option {
 	newOpt := *o
 	return &newOpt
+}
+
+func (o *Option) setWappinClient(c *client) *Option {
+	o.wappinClient = c
+	return o
 }
 
 // Default returns the default option.
@@ -73,6 +86,22 @@ func (o *Option) Default() *Option {
 			hystrix.WithHystrixTimeout(o.Timeout),
 			hystrix.WithHTTPClient(o.Client),
 		)...,
+	)
+
+	if o.Storage == nil {
+		o.Storage = storage.NewLocalStorage()
+	}
+
+	if o.wappinClient == nil {
+		o.wappinClient = (new(client)).Assign(o)
+	}
+
+	o.manager = manager.New(
+		append([]manager.FnOption{
+			manager.WithStorage(o.Storage),
+			manager.WithClient(o.wappinClient),
+			manager.WithKey(DefaultTokenKey),
+		}, o.ManagerOptions...)...,
 	)
 	return o
 }
@@ -133,5 +162,26 @@ func WithTimeout(timeout time.Duration) FnOption {
 func WithHystrixOptions(options ...hystrix.Option) FnOption {
 	return func(o *Option) {
 		o.HystrixOptions = options
+	}
+}
+
+// WithStorage sets the token storage of Wappin API.
+func WithStorage(storage storage.Hub) FnOption {
+	return func(o *Option) {
+		o.Storage = storage
+	}
+}
+
+// WithManagerOptions sets the manager options of Wappin API.
+func WithManagerOptions(options ...manager.FnOption) FnOption {
+	return func(o *Option) {
+		o.ManagerOptions = options
+	}
+}
+
+// WithCustomIPs sets the custom IPs of Wappin API.
+func WithCustomIPs(customIPs ...string) FnOption {
+	return func(o *Option) {
+		o.CustomIPs = customIPs
 	}
 }

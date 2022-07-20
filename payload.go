@@ -12,7 +12,7 @@ const (
 
 // ResponseMessage is a response message from the Wappin.
 type ResponseMessage struct {
-	MessageId      string                 `json:"message_id"`
+	MessageID      string                 `json:"message_id"`
 	Status         string                 `json:"status"`
 	Message        string                 `json:"message"`
 	Data           map[string]interface{} `json:"data"`
@@ -31,7 +31,15 @@ type RequestWhatsappMessage struct {
 }
 
 // Default returns the default request for send Whatsapp message in Wappin.
-func (r *RequestWhatsappMessage) Default() *RequestWhatsappMessage {
+func (r *RequestWhatsappMessage) Default(o *Option) *RequestWhatsappMessage {
+	if r.ClientID == "" {
+		r.ClientID = o.ClientID
+	}
+
+	if r.ProjectID == "" {
+		r.ProjectID = o.ProjectID
+	}
+
 	r.RecipientNumber = phone.NormalizeID(r.RecipientNumber, 0)
 	return r
 }
