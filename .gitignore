@@ -1,3 +1,10 @@
 .env
 /vendor
 wappin
+
+# Editor Configs
+.vscode
+.idea
+
+# Environment Files
+.env
