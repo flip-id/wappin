@@ -70,7 +70,7 @@ func (o *Option) Default() *Option {
 		o.BaseURL = DefaultBaseURL
 	}
 
-	o.BaseURL = strings.TrimSuffix(o.BaseURL, "/")
+	o.BaseURL = strings.TrimRight(o.BaseURL, "/")
 	if reflecthelper.IsNil(o.Client) {
 		o.Client = http.DefaultClient
 	}
