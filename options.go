@@ -18,6 +18,8 @@ const (
 	DefaultTimeout = 30 * time.Second
 	// 	DefaultTokenKey is the default key for the token storage.
 	DefaultTokenKey = "manager:token:wappin"
+	// DefaultMarketingTokenKey is the default key for the token storage especially for marketing account.
+	DefaultMarketingTokenKey = "manager:marketing-token:wappin"
 )
 
 // List of all endpoints used in this package.
@@ -28,19 +30,20 @@ const (
 
 // Option is option for initializing Wappin client.
 type Option struct {
-	BaseURL        string
-	ClientID       string
-	ProjectID      string
-	SecretKey      string
-	ClientKey      string
-	Client         heimdall.Doer
-	Timeout        time.Duration
-	HystrixOptions []hystrix.Option
-	Storage        storage.Hub
-	ManagerOptions []manager.FnOption
-	client         *hystrix.Client
-	wappinClient   *client
-	manager        manager.TokenManager
+	BaseURL            string
+	ClientID           string
+	ProjectID          string
+	SecretKey          string
+	ClientKey          string
+	Client             heimdall.Doer
+	Timeout            time.Duration
+	HystrixOptions     []hystrix.Option
+	Storage            storage.Hub
+	ManagerOptions     []manager.FnOption
+	client             *hystrix.Client
+	wappinClient       *client
+	manager            manager.TokenManager
+	IsMarketingAccount bool
 }
 
 // Assign assigns the option to the client.
@@ -95,11 +98,16 @@ func (o *Option) Default() *Option {
 		o.wappinClient = (new(client)).Assign(o)
 	}
 
+	key := DefaultTokenKey
+	if o.IsMarketingAccount {
+		key = DefaultMarketingTokenKey
+	}
+
 	o.manager = manager.New(
 		append([]manager.FnOption{
 			manager.WithStorage(o.Storage),
 			manager.WithClient(o.wappinClient),
-			manager.WithKey(DefaultTokenKey),
+			manager.WithKey(key),
 		}, o.ManagerOptions...)...,
 	)
 	return o
@@ -175,5 +183,12 @@ func WithStorage(storage storage.Hub) FnOption {
 func WithManagerOptions(options ...manager.FnOption) FnOption {
 	return func(o *Option) {
 		o.ManagerOptions = options
+	}
+}
+
+// WithIsMarketingAccount sets Is Marketing account or not.
+func WithIsMarketingAccount(isMarketingAccount bool) FnOption {
+	return func(o *Option) {
+		o.IsMarketingAccount = isMarketingAccount
 	}
 }
