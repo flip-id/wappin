@@ -200,3 +200,10 @@ func WithIsMarketingAccount(isMarketingAccount bool) FnOption {
 		o.IsMarketingAccount = isMarketingAccount
 	}
 }
+
+// WithTokenCacheKey set token cache key for manage token
+func WithTokenCacheKey(tokenCacheKey string) FnOption {
+	return func(o *Option) {
+		o.TokenCacheKey = tokenCacheKey
+	}
+}
