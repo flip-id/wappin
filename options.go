@@ -35,6 +35,7 @@ type Option struct {
 	ProjectID          string
 	SecretKey          string
 	ClientKey          string
+	TokenCacheKey      string
 	Client             heimdall.Doer
 	Timeout            time.Duration
 	HystrixOptions     []hystrix.Option
@@ -98,9 +99,16 @@ func (o *Option) Default() *Option {
 		o.wappinClient = (new(client)).Assign(o)
 	}
 
+	// The default key for SendOTP account
 	key := DefaultTokenKey
+	// This key for marketing account
 	if o.IsMarketingAccount {
 		key = DefaultMarketingTokenKey
+	}
+
+	// The new config for any account you want to use, so this config will be used in the future
+	if o.TokenCacheKey != "" {
+		key = o.TokenCacheKey
 	}
 
 	o.manager = manager.New(
