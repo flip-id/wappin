@@ -3,12 +3,13 @@ package wappin
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"net/http"
-
 	"github.com/fairyhunter13/pool"
 	"github.com/flip-id/valuefirst/manager"
+	"github.com/flip-id/valuefirst/storage"
 	"github.com/gofiber/fiber/v2"
+	"io"
+	"net/http"
+	"time"
 )
 
 var _ manager.TokenClient = new(client)
@@ -49,6 +50,27 @@ func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage
 	}
 
 	res, err = c.postToWappin(ctx, EndpointSendHSM, reqMsg.Default(c.opt))
+	// create new token if we get invalid credential
+	if res.Status == "401" {
+		var tokenResp manager.ResponseGenerateToken
+		var respToken *storage.Token
+
+		tokenResp, err = c.GenerateToken(ctx)
+		if err != nil {
+			return
+		}
+
+		respToken, err = tokenResp.ToToken()
+		if err != nil {
+			return
+		}
+
+		err = c.opt.Storage.Save(ctx, c.opt.TokenCacheKey, respToken.SetHalfExpiredDate(time.Now()))
+
+		// re-hit send message to Wappin
+		return c.postToWappin(ctx, EndpointSendHSM, reqMsg.Default(c.opt))
+	}
+
 	return
 }
 
