@@ -109,6 +109,9 @@ func (o *Option) Default() *Option {
 	// The new config for any account you want to use, so this config will be used in the future
 	if o.TokenCacheKey != "" {
 		key = o.TokenCacheKey
+	} else {
+		// just to help create a new redis cache key for generate new token
+		o.TokenCacheKey = key
 	}
 
 	o.manager = manager.New(
@@ -118,6 +121,7 @@ func (o *Option) Default() *Option {
 			manager.WithKey(key),
 		}, o.ManagerOptions...)...,
 	)
+
 	return o
 }
 
