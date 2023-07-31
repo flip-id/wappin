@@ -89,7 +89,7 @@ func TestSendMessage(t *testing.T) {
 	ctx := context.Background()
 	req := RequestMessage{
 		To:   os.Getenv("PHONE_NUMBER"),
-		Type: messageTypeTemplate,
+		Type: MessageTypeTemplate,
 		Template: TemplateRequest{
 			Name: "testing_webhook_marketing",
 			Language: LanguageRequest{
@@ -99,14 +99,14 @@ func TestSendMessage(t *testing.T) {
 			Namespace: os.Getenv("WAPPIN_V2_NAMESPACE"),
 			Components: []ComponentRequest{
 				{
-					Type: componentTypeBody,
+					Type: ComponentTypeBody,
 					Parameters: []ComponentParameterRequest{
 						{
-							Type: messageTypeText,
+							Type: MessageTypeText,
 							Text: "hari ini",
 						},
 						{
-							Type: messageTypeText,
+							Type: MessageTypeText,
 							Text: "Rp. 999999999",
 						},
 					},
@@ -128,7 +128,7 @@ func TestSendMessageWithImage(t *testing.T) {
 	ctx := context.Background()
 	req := RequestMessage{
 		To:   os.Getenv("PHONE_NUMBER"),
-		Type: messageTypeTemplate,
+		Type: MessageTypeTemplate,
 		Template: TemplateRequest{
 			Name: "testing_webhook_with_image",
 			Language: LanguageRequest{
@@ -138,10 +138,10 @@ func TestSendMessageWithImage(t *testing.T) {
 			Namespace: os.Getenv("WAPPIN_V2_NAMESPACE"),
 			Components: []ComponentRequest{
 				{
-					Type: componentTypeHeader,
+					Type: ComponentTypeHeader,
 					Parameters: []ComponentParameterRequest{
 						{
-							Type: messageTypeImage,
+							Type: MessageTypeImage,
 							Image: &MediaParameterRequest{
 								Link: "https://storage.googleapis.com/flip-prod-assets/images/verif_email.png",
 							},
@@ -159,4 +159,47 @@ func TestSendMessageWithImage(t *testing.T) {
 	assert.NotNil(t, resp.Messages[0].Id)
 
 	fmt.Println("Success sending message to Wappin with message ID", resp.Messages[0].Id)
+}
+
+// TestSendMessageErrorInvalidCredential is use for testing username or password invalid
+// Please change or make empty username or password before run this IT
+func TestSendMessageErrorInvalidCredential(t *testing.T) {
+	ctx := context.Background()
+
+	req := RequestMessage{
+		To:   os.Getenv("PHONE_NUMBER"),
+		Type: MessageTypeTemplate,
+		Template: TemplateRequest{
+			Name: "testing_webhook_with_image",
+			Language: LanguageRequest{
+				Policy: "deterministic",
+				Code:   "id",
+			},
+			Namespace: os.Getenv("WAPPIN_V2_NAMESPACE"),
+			Components: []ComponentRequest{
+				{
+					Type: ComponentTypeHeader,
+					Parameters: []ComponentParameterRequest{
+						{
+							Type: MessageTypeImage,
+							Image: &MediaParameterRequest{
+								Link: "https://storage.googleapis.com/flip-prod-assets/images/verif_email.png",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := c.SendMessage(ctx, &req)
+
+	// cast error to wappin error
+	e := err.(*Error)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+	assert.Equal(t, 1005, e.Code)
+	assert.Equal(t, "Access Denied", e.Title)
+	assert.Equal(t, "Missing or invalid authentication credentials.", e.Details)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fairyhunter13/pool"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	goCoreLog "gitlab.com/flip-id/go-core/helpers/log"
 	goCoreTracer "gitlab.com/flip-id/go-core/tracer"
@@ -141,6 +142,8 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 		return
 	}
 
+	// casting error from wappin if any error response
+	err = getError(resp.StatusCode, res.Errors)
 	return
 }
 
@@ -151,13 +154,13 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 
 	// looking for token from cache
 	tokenInterface, err := c.opt.Storage.Get(ctx, c.opt.TokenCacheKey)
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		return "", err
 	}
 
 	// convert token if not empty
-	tokenConv := fmt.Sprintf("%v", tokenInterface)
-	if tokenConv != "" {
+	if tokenInterface != nil {
+		tokenConv := fmt.Sprintf("%v", tokenInterface)
 		return tokenConv, nil
 	}
 
@@ -201,7 +204,8 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 		return token, err
 	}
 
-	return "", errors.New("invalid index response login from Wappin")
+	err = getError(resp.StatusCode, responseLogin.Errors)
+	return "", err
 }
 
 func (c *client) getTTLToken(expiredStr string) (time.Duration, error) {

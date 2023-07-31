@@ -24,7 +24,7 @@ type MessageResponse struct {
 
 // Error response if you send invalid request to Wappin or something wrong issue from Wappin
 type Error struct {
-	Code    string `json:"code"`
+	Code    int    `json:"code"`
 	Title   string `json:"title"`
 	Details string `json:"details"`
 }
