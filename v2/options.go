@@ -3,7 +3,7 @@ package v2
 import (
 	"github.com/fairyhunter13/reflecthelper/v5"
 	"github.com/flip-id/valuefirst/manager"
-	"github.com/flip-id/valuefirst/storage"
+	"github.com/flip-id/wappin/storage"
 	"github.com/gojek/heimdall/v7"
 	"github.com/gojek/heimdall/v7/hystrix"
 	"net/http"
@@ -30,7 +30,7 @@ type Option struct {
 	Client         heimdall.Doer
 	Timeout        time.Duration
 	HystrixOptions []hystrix.Option
-	Storage        storage.Hub
+	Storage        storage.IRedisStorage // the storage using Redis
 	ManagerOptions []manager.FnOption
 	client         *hystrix.Client
 	wappinClient   *client
@@ -79,10 +79,6 @@ func (o *Option) Default() *Option {
 			hystrix.WithHTTPClient(o.Client),
 		)...,
 	)
-
-	if o.Storage == nil {
-		o.Storage = storage.NewLocalStorage()
-	}
 
 	if o.wappinClient == nil {
 		o.wappinClient = (new(client)).Assign(o)
@@ -137,7 +133,7 @@ func WithHystrixOptions(options ...hystrix.Option) FnOption {
 }
 
 // WithStorage sets the token storage of Wappin API.
-func WithStorage(storage storage.Hub) FnOption {
+func WithStorage(storage storage.IRedisStorage) FnOption {
 	return func(o *Option) {
 		o.Storage = storage
 	}

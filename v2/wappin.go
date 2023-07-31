@@ -9,6 +9,7 @@ import (
 	goCoreTracer "gitlab.com/flip-id/go-core/tracer"
 	"io"
 	"net/http"
+	"time"
 )
 
 const (
@@ -120,8 +121,6 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 	ctx = tr.Context()
 	requestId := c.getRequestId(ctx)
 
-	// DON'T FORGET TO GET CACHE AND CREATE CACHE
-
 	url := c.opt.BaseURL + c.opt.LoginURL
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
@@ -152,10 +151,29 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 	}
 
 	if len(responseLogin.Users) > 0 {
-		return responseLogin.Users[0].Token, nil
+		token = responseLogin.Users[0].Token
+		expiredStr := responseLogin.Users[0].ExpiredAfter
+
+		ttlToken, err := c.getTTLToken(expiredStr)
+
+		err = c.opt.Storage.Save(ctx, c.opt.TokenCacheKey, token, ttlToken)
+		if err != nil {
+			return
+		}
+
+		return
 	}
 
 	return "", errors.New("invalid index response login from Wappin")
+}
+
+func (c *client) getTTLToken(expiredStr string) (time.Duration, error) {
+	duration, err := time.ParseDuration(expiredStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return duration, nil
 }
 
 func (c *client) prepareRequest(ctx context.Context, req *http.Request) *http.Request {
