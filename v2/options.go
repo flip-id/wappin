@@ -25,6 +25,7 @@ type Option struct {
 	MessagesURL    string
 	Username       string
 	Password       string
+	Namespace      string
 	TokenCacheKey  string
 	Client         heimdall.Doer
 	Timeout        time.Duration
@@ -153,5 +154,26 @@ func WithManagerOptions(options ...manager.FnOption) FnOption {
 func WithTokenCacheKey(tokenCacheKey string) FnOption {
 	return func(o *Option) {
 		o.TokenCacheKey = tokenCacheKey
+	}
+}
+
+// WithUsername set username for login
+func WithUsername(username string) FnOption {
+	return func(o *Option) {
+		o.Username = username
+	}
+}
+
+// WithPassword set password for login
+func WithPassword(password string) FnOption {
+	return func(o *Option) {
+		o.Password = password
+	}
+}
+
+// WithNamespace set namespace for wappin account
+func WithNamespace(namespace string) FnOption {
+	return func(o *Option) {
+		o.Namespace = namespace
 	}
 }

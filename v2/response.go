@@ -32,7 +32,7 @@ type Error struct {
 // ResponseLogin is response from login API Wappin to get credential
 type ResponseLogin struct {
 	BaseResponse
-	User []UserResponse `json:"user"`
+	Users []UserResponse `json:"users"`
 }
 
 // UserResponse is to get Token and Expired time
