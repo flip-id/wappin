@@ -5,7 +5,7 @@ package v2
 type RequestMessage struct {
 	To            string          `json:"to"`
 	Type          string          `json:"type"`
-	RecipientType string          `json:"recipient_type"`
+	RecipientType string          `json:"recipient_type,omitempty"`
 	Template      TemplateRequest `json:"template"`
 }
 
@@ -29,14 +29,26 @@ type LanguageRequest struct {
 // SubType is optional, only used for button template
 // Index is optional, used to set button position, only valid for templates with buttons
 type ComponentRequest struct {
-	Type       string                      `json:"type"`
-	SubType    string                      `json:"subType"`
-	Parameters []ComponentParameterRequest `json:"parameters"`
-	Index      int                         `json:"index"`
+	Type       string                      `json:"type,omitempty"`
+	SubType    string                      `json:"subType,omitempty"`
+	Parameters []ComponentParameterRequest `json:"parameters,omitempty"`
+	Index      int                         `json:"index,omitempty"`
 }
 
 // ComponentParameterRequest is required if the template has a dynamic variable value
 type ComponentParameterRequest struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type  string                 `json:"type"`
+	Text  string                 `json:"text,omitempty"`
+	Image *MediaParameterRequest `json:"image,omitempty"`
+	Audio *MediaParameterRequest `json:"audio,omitempty"`
+	Video *MediaParameterRequest `json:"video,omitempty"`
+}
+
+// MediaParameterRequest is required for Media request, select one Id or Link
+// For Caption and FileName is optional
+type MediaParameterRequest struct {
+	Id       string `json:"id,omitempty"`
+	Link     string `json:"link,omitempty"`
+	Caption  string `json:"caption,omitempty"`
+	FileName string `json:"fileName,omitempty"`
 }

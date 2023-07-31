@@ -119,4 +119,43 @@ func TestSendMessage(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
 	assert.NotNil(t, resp.Messages[0].Id)
+
+	fmt.Println("Success sending message to Wappin with message ID", resp.Messages[0].Id)
+}
+
+func TestSendMessageWithImage(t *testing.T) {
+	ctx := context.Background()
+	req := RequestMessage{
+		To:   os.Getenv("PHONE_NUMBER"),
+		Type: messageTypeTemplate,
+		Template: TemplateRequest{
+			Name: "testing_webhook_with_image",
+			Language: LanguageRequest{
+				Policy: "deterministic",
+				Code:   "id",
+			},
+			Namespace: os.Getenv("WAPPIN_V2_NAMESPACE"),
+			Components: []ComponentRequest{
+				{
+					Type: componentTypeHeader,
+					Parameters: []ComponentParameterRequest{
+						{
+							Type: messageTypeImage,
+							Image: &MediaParameterRequest{
+								Link: "https://storage.googleapis.com/flip-prod-assets/images/verif_email.png",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := c.SendMessage(ctx, &req)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+	assert.NotNil(t, resp.Messages[0].Id)
+
+	fmt.Println("Success sending message to Wappin with message ID", resp.Messages[0].Id)
 }

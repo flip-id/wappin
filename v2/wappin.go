@@ -81,17 +81,20 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 		return
 	}
 
+	// getting token
+	token, err := c.getToken(ctx)
+	if err != nil {
+		return
+	}
+
+	// prepare the request
 	url := c.opt.BaseURL + endpoint
 	req, err := http.NewRequest(http.MethodPost, url, buff)
 	if err != nil {
 		return
 	}
 
-	token, err := c.getToken(ctx)
-	if err != nil {
-		return
-	}
-
+	// set token to header and do request to Wapppin
 	req.Header.Set(headerAuthorization, headerBearer+token)
 	resp, err := c.opt.client.Do(c.prepareRequest(ctx, req))
 	if err != nil {
