@@ -18,7 +18,7 @@ type redisStorage struct {
 	*redis.Client
 }
 
-// NewGoRedisV8 creates a new redis client for storage.Hub.
+// NewGoRedisV8 creates a new redis client for storage
 func NewGoRedisV8(c *redis.Client) IRedisStorage {
 	if c == nil {
 		return nil

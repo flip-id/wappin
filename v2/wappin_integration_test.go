@@ -5,11 +5,16 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"github.com/fairyhunter13/dotenv"
+	"github.com/flip-id/wappin/storage"
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 )
@@ -28,6 +33,9 @@ func setupClient() {
 			log.Fatalln(err)
 		}
 
+		// setup redis and getting interface storage
+		storage := setUpRedis()
+
 		c = New(
 			WithBaseURL(os.Getenv("WAPPIN_V2_BASE_URL")),
 			WithLoginURL(os.Getenv("WAPPIN_V2_LOGIN_URL")),
@@ -36,8 +44,35 @@ func setupClient() {
 			WithPassword(os.Getenv("WAPPIN_V2_PASSWORD")),
 			WithNamespace(os.Getenv("WAPPIN_V2_NAMESPACE")),
 			WithTokenCacheKey(os.Getenv("WAPPIN_V2_TOKEN_CACHE_KEY")),
+			WithStorage(storage),
 		)
 	})
+}
+
+func getRedisClient() (*redis.Client, error) {
+	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		return nil, errors.New("failed convert string DB to integer")
+	}
+
+	redisOptions := &redis.Options{
+		Addr: fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
+		DB:   db,
+	}
+
+	if os.Getenv("REDIS_PASSWORD") != "" {
+		redisOptions.Password = os.Getenv("REDIS_PASSWORD")
+	}
+
+	return redis.NewClient(redisOptions), nil
+}
+func setUpRedis() storage.IRedisStorage {
+	redisClient, err := getRedisClient()
+	if err != nil {
+		fmt.Println("error setup redis", err)
+	}
+
+	return storage.NewGoRedisV8(redisClient)
 }
 
 // Run integration tests.

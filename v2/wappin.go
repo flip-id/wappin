@@ -3,6 +3,7 @@ package v2
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/fairyhunter13/pool"
 	"github.com/pkg/errors"
 	goCoreLog "gitlab.com/flip-id/go-core/helpers/log"
@@ -121,13 +122,23 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 	ctx = tr.Context()
 	requestId := c.getRequestId(ctx)
 
+	// looking for token from cache
+	tokenInterface, err := c.opt.Storage.Get(ctx, c.opt.TokenCacheKey)
+	if err != nil {
+		return "", err
+	}
+
+	// convert token if not empty
+	tokenConv := fmt.Sprintf("%v", tokenInterface)
+	if tokenConv != "" {
+		return tokenConv, nil
+	}
+
 	url := c.opt.BaseURL + c.opt.LoginURL
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		goCoreLog.GetLogger(ctx).
 			WithField("request_id", requestId).
-			//WithField("username", c.opt.Username).
-			//WithField("password", c.opt.Password).
 			WithError(err)
 
 		return
@@ -155,25 +166,30 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 		expiredStr := responseLogin.Users[0].ExpiredAfter
 
 		ttlToken, err := c.getTTLToken(expiredStr)
+		if err != nil {
+			return "", err
+		}
 
 		err = c.opt.Storage.Save(ctx, c.opt.TokenCacheKey, token, ttlToken)
 		if err != nil {
-			return
+			return "", err
 		}
 
-		return
+		return token, err
 	}
 
 	return "", errors.New("invalid index response login from Wappin")
 }
 
 func (c *client) getTTLToken(expiredStr string) (time.Duration, error) {
-	duration, err := time.ParseDuration(expiredStr)
+	myTime, err := time.Parse("2006-01-02T15:04:05+07:00", expiredStr)
 	if err != nil {
-		return 0, err
+		panic(err)
 	}
 
-	return duration, nil
+	// reducing the token for one and a half days
+	now := time.Now().Add(time.Hour * 36)
+	return myTime.Sub(now), err
 }
 
 func (c *client) prepareRequest(ctx context.Context, req *http.Request) *http.Request {
