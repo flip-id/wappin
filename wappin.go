@@ -51,12 +51,17 @@ func (c *client) SendMessage(ctx context.Context, reqMsg *RequestWhatsappMessage
 	}
 
 	res, err = c.postToWappin(ctx, EndpointSendHSM, reqMsg.Default(c.opt))
-	if err != nil {
+	if err == nil {
+		return
+	}
+
+	wappinErr, ok := err.(*Error)
+	if !ok {
 		return
 	}
 
 	// create new token if we get invalid credential
-	if res.Status == "401" {
+	if wappinErr.Status == "401" {
 		var tokenResp manager.ResponseGenerateToken
 		var respToken *storage.Token
 

@@ -84,6 +84,11 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	// getting token
 	token, err := c.getToken(ctx)
 	if err != nil {
+		goCoreLog.GetLogger(ctx).
+			WithField("payload", buff).
+			WithField("request_id", requestId).
+			WithError(err)
+
 		return
 	}
 
@@ -91,6 +96,11 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	url := c.opt.BaseURL + endpoint
 	req, err := http.NewRequest(http.MethodPost, url, buff)
 	if err != nil {
+		goCoreLog.GetLogger(ctx).
+			WithField("payload", buff).
+			WithField("request_id", requestId).
+			WithError(err)
+
 		return
 	}
 
@@ -98,6 +108,11 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	req.Header.Set(headerAuthorization, headerBearer+token)
 	resp, err := c.opt.client.Do(c.prepareRequest(ctx, req))
 	if err != nil {
+		goCoreLog.GetLogger(ctx).
+			WithField("payload", buff).
+			WithField("request_id", requestId).
+			WithError(err)
+
 		return
 	}
 	defer func() {
@@ -108,11 +123,21 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 
 	byteBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+		goCoreLog.GetLogger(ctx).
+			WithField("payload", buff).
+			WithField("request_id", requestId).
+			WithError(err)
+
 		return
 	}
 
 	err = json.Unmarshal(byteBody, &res)
 	if err != nil {
+		goCoreLog.GetLogger(ctx).
+			WithField("payload", buff).
+			WithField("request_id", requestId).
+			WithError(err)
+
 		return
 	}
 
@@ -123,7 +148,6 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 	tr := goCoreTracer.StartTrace(ctx, "WappinV2-getToken")
 	defer tr.Finish()
 	ctx = tr.Context()
-	requestId := c.getRequestId(ctx)
 
 	// looking for token from cache
 	tokenInterface, err := c.opt.Storage.Get(ctx, c.opt.TokenCacheKey)
@@ -140,10 +164,6 @@ func (c *client) getToken(ctx context.Context) (token string, err error) {
 	url := c.opt.BaseURL + c.opt.LoginURL
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("request_id", requestId).
-			WithError(err)
-
 		return
 	}
 

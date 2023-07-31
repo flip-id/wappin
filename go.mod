@@ -8,10 +8,12 @@ require (
 	github.com/fairyhunter13/pool v0.0.0-20211114080908-60a828fe746c
 	github.com/fairyhunter13/reflecthelper/v5 v5.1.1
 	github.com/flip-id/valuefirst v1.0.4
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gofiber/fiber/v2 v2.35.0
 	github.com/gojek/heimdall/v7 v7.0.2
+	github.com/gojek/valkyrie v0.0.0-20180215180059-6aee720afcdf
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.4
 	gitlab.com/flip-id/go-core v0.0.19
 )
 
@@ -29,8 +31,6 @@ require (
 	github.com/fairyhunter13/envcompact v0.2.0 // indirect
 	github.com/fairyhunter13/go-lexer v1.0.0-1 // indirect
 	github.com/fairyhunter13/task/v2 v2.0.0 // indirect
-	github.com/go-redis/redis/v8 v8.11.5 // indirect
-	github.com/gojek/valkyrie v0.0.0-20180215180059-6aee720afcdf // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/klauspost/compress v1.15.0 // indirect

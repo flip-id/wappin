@@ -66,6 +66,7 @@ func getRedisClient() (*redis.Client, error) {
 
 	return redis.NewClient(redisOptions), nil
 }
+
 func setUpRedis() storage.IRedisStorage {
 	redisClient, err := getRedisClient()
 	if err != nil {
