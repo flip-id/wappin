@@ -9,9 +9,11 @@ require (
 	github.com/fairyhunter13/reflecthelper/v5 v5.1.1
 	github.com/flip-id/valuefirst v1.0.4
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-redis/redismock/v8 v8.11.5
 	github.com/gofiber/fiber/v2 v2.35.0
 	github.com/gojek/heimdall/v7 v7.0.2
 	github.com/gojek/valkyrie v0.0.0-20180215180059-6aee720afcdf
+	github.com/golang/mock v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/flip-id/go-core v0.0.19

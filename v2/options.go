@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"github.com/fairyhunter13/reflecthelper/v5"
 	"github.com/flip-id/valuefirst/manager"
 	"github.com/flip-id/wappin/storage"
 	"github.com/gojek/heimdall/v7"
@@ -64,7 +63,7 @@ func (o *Option) Default() *Option {
 	}
 
 	o.BaseURL = strings.TrimRight(o.BaseURL, "/")
-	if reflecthelper.IsNil(o.Client) {
+	if o.Client == nil {
 		o.Client = http.DefaultClient
 	}
 

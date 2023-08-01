@@ -1,10 +1,10 @@
 package v2
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fairyhunter13/pool"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	goCoreLog "gitlab.com/flip-id/go-core/helpers/log"
@@ -68,11 +68,10 @@ func (c *client) SendMessage(ctx context.Context, reqMsg *RequestMessage) (res *
 }
 
 func (c *client) postToWappin(ctx context.Context, endpoint string, body interface{}) (res *ResponseMessage, err error) {
-	buff := pool.GetBuffer()
-	defer pool.Put(buff)
 	requestId := c.getRequestId(ctx)
 
-	err = json.NewEncoder(buff).Encode(body)
+	var buff bytes.Buffer
+	err = json.NewEncoder(&buff).Encode(body)
 	if err != nil {
 		goCoreLog.GetLogger(ctx).
 			WithField("request_id", requestId).
@@ -95,7 +94,7 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 
 	// prepare the request
 	url := c.opt.BaseURL + endpoint
-	req, err := http.NewRequest(http.MethodPost, url, buff)
+	req, err := http.NewRequest(http.MethodPost, url, &buff)
 	if err != nil {
 		goCoreLog.GetLogger(ctx).
 			WithField("payload", buff).
@@ -144,6 +143,10 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 
 	// casting error from wappin if any error response
 	err = getError(resp.StatusCode, res.Errors)
+	if err != nil {
+		return nil, err
+	}
+
 	return
 }
 
