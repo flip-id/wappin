@@ -6,15 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/google/martian/log"
 	"github.com/pkg/errors"
-	goCoreLog "gitlab.com/flip-id/go-core/helpers/log"
-	goCoreTracer "gitlab.com/flip-id/go-core/tracer"
 	"io"
 	"net/http"
 	"time"
 )
 
 const (
+	RequestId             = "request_id"
 	headerContentType     = "Content-Type"
 	headerApplicationJSON = "application/json"
 	headerAuthorization   = "Authorization"
@@ -50,10 +50,6 @@ func (c *client) Assign(o *Option) *client {
 
 // SendMessage for sending Whatsapp message to Wappin, currently we only support for message type with template, we can add components are image, video and text in the message.
 func (c *client) SendMessage(ctx context.Context, reqMsg *RequestMessage) (res *ResponseMessage, err error) {
-	tr := goCoreTracer.StartTrace(ctx, "WappinV2-sendMessage")
-	defer tr.Finish()
-	ctx = tr.Context()
-
 	if reqMsg == nil {
 		err = errors.New("Request nil arguments")
 		return
@@ -73,22 +69,14 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	var buff bytes.Buffer
 	err = json.NewEncoder(&buff).Encode(body)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("request_id", requestId).
-			WithField("payload", buff).
-			WithError(err)
-
+		log.Errorf("Error encoding request body with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 
 	// getting token
 	token, err := c.getToken(ctx)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("payload", buff).
-			WithField("request_id", requestId).
-			WithError(err)
-
+		log.Errorf("Error get token with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 
@@ -96,11 +84,7 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	url := c.opt.BaseURL + endpoint
 	req, err := http.NewRequest(http.MethodPost, url, &buff)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("payload", buff).
-			WithField("request_id", requestId).
-			WithError(err)
-
+		log.Errorf("Error create HTTP request with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 
@@ -108,11 +92,7 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 	req.Header.Set(headerAuthorization, headerBearer+token)
 	resp, err := c.opt.client.Do(c.prepareRequest(ctx, req))
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("payload", buff).
-			WithField("request_id", requestId).
-			WithError(err)
-
+		log.Errorf("Error HTTP request with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 	defer func() {
@@ -123,21 +103,13 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 
 	byteBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("payload", buff).
-			WithField("request_id", requestId).
-			WithError(err)
-
+		log.Errorf("Error get body response with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 
 	err = json.Unmarshal(byteBody, &res)
 	if err != nil {
-		goCoreLog.GetLogger(ctx).
-			WithField("payload", buff).
-			WithField("request_id", requestId).
-			WithError(err)
-
+		log.Errorf("Error unmarshalling response with request_id = %s and payload = %s and error = %v", requestId, buff, err)
 		return
 	}
 
@@ -151,10 +123,6 @@ func (c *client) postToWappin(ctx context.Context, endpoint string, body interfa
 }
 
 func (c *client) getToken(ctx context.Context) (token string, err error) {
-	tr := goCoreTracer.StartTrace(ctx, "WappinV2-getToken")
-	defer tr.Finish()
-	ctx = tr.Context()
-
 	// looking for token from cache
 	tokenInterface, err := c.opt.Storage.Get(ctx, c.opt.TokenCacheKey)
 	if err != nil && err != redis.Nil {
@@ -233,7 +201,7 @@ func (c *client) getRequestId(ctx context.Context) string {
 		return reqID
 	}
 
-	temp := ctx.Value(goCoreLog.REQUEST_ID_KEY)
+	temp := ctx.Value(RequestId)
 	if reqIDStr, ok := temp.(string); ok {
 		reqID = reqIDStr
 	}
