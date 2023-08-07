@@ -32,7 +32,7 @@ type ComponentRequest struct {
 	Type       string                      `json:"type,omitempty"`
 	SubType    string                      `json:"sub_type,omitempty"`
 	Parameters []ComponentParameterRequest `json:"parameters,omitempty"`
-	Index      int                         `json:"index,omitempty"`
+	Index      *int                        `json:"index,omitempty"`
 }
 
 // ComponentParameterRequest is required if the template has a dynamic variable value
