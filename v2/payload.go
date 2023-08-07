@@ -30,7 +30,7 @@ type LanguageRequest struct {
 // Index is optional, used to set button position, only valid for templates with buttons
 type ComponentRequest struct {
 	Type       string                      `json:"type,omitempty"`
-	SubType    string                      `json:"subType,omitempty"`
+	SubType    string                      `json:"sub_type,omitempty"`
 	Parameters []ComponentParameterRequest `json:"parameters,omitempty"`
 	Index      int                         `json:"index,omitempty"`
 }
@@ -50,5 +50,5 @@ type MediaParameterRequest struct {
 	Id       string `json:"id,omitempty"`
 	Link     string `json:"link,omitempty"`
 	Caption  string `json:"caption,omitempty"`
-	FileName string `json:"fileName,omitempty"`
+	FileName string `json:"file_name,omitempty"`
 }
